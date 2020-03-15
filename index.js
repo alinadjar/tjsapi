@@ -1,5 +1,6 @@
 const express = require('express');
 const app = express();
+const morgan = require('morgan');
 
 
 // ----------------------------  Basic Config
@@ -9,14 +10,32 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 // console.log(app.get('port'));
 
 
+
+
 // ----------------------------  Middlewares
+
+//--- CORS
+app.use(function (req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    next();
+});
+//--- json parse the request body
+app.use(express.json());
+app.use(morgan('tiny'));
+
+app.use('/api', require('./API'));
+
+
+
 
 // ---------------------------- Route Handlers
 app.get('/', (req, res) => {
     res.status(200).send('OK');
 });
 
-// ----------------------------  Error Handlers
+// ----------------------------  Error Handler Middleware
+
 
 const server = app.listen(PORT, () => {
     let host = server.address().address;
