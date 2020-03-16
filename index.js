@@ -4,7 +4,7 @@ const morgan = require('morgan');
 
 
 // ----------------------------  Basic Config
-const PORT = process.env.PORT || 2000;
+const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 // app.set('port', PORT);
 // console.log(app.get('port'));

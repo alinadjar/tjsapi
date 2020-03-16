@@ -7,11 +7,8 @@ var moment = require('jalali-moment');
 // ------ Base Config
 const mom = moment().locale('fa');
 
-const dbConfig = {
-    user: config.get('connectionStrings.oracle.user'),
-    password: config.get('connectionStrings.oracle.password'),
-    connectString: config.get('connectionStrings.oracle.db')
-};
+const dbConfig = require('../../../startup/dbConfig')();
+
 
 
 // display list of all foods

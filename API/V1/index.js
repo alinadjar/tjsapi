@@ -1,11 +1,13 @@
 
+const serviceSMS = require('../../services/serviceSMS');
 const express = require('express');
 const router = express.Router();
 
 
 // -------------------------- Controllers
 const foodController = require('./Controllers/foodController');
-
+const userController = require('./Controllers/userController');
+const saloonController = require('./Controllers/saloonController');
 
 
 
@@ -20,23 +22,17 @@ router.get('/test/:id', (req, res) => {
 });
 
 
-// router.get('/users', (req, res) => {
-//     res.status(200).send('list of captain orders');
-// });
+// router.get('/users', userController.user_list);
+// router.get('/users/:username', userController.user_detail);
+router.post('/signin', userController.user_signin);
+router.get('/users/me', userController.user_me);
+router.get('/users/token', userController.user_renewToken);
+router.post('/token/reject', userController.user_rejectToken)
 
-// router.get('/users/:username', (req, res) => {
-//     res.status(200).send('details of the given id');
-// });
-
-router.post('/signin', (req, res) => {
-    // authenticate user,
-    // generate JWT token
-    res.sendStatus(200);
-});
 
 router.get('/foods', foodController.food_list);
-
 router.get('/foods/:id', foodController.food_detail);
+
 
 router.get('/orders', (req, res) => {
     res.status(200).send('list of orders');
@@ -60,15 +56,27 @@ router.get('/myOrders/:captainID', (req, res) => {
 //     res.status(200).send('list of guests info');
 // });
 
-router.get('/guests/:mobile', (req, res) => {
+router.get('/guests/:id', (req, res) => {
+    res.status(200).send('list of guests info');
+});
+
+router.get('/guests/:mobile/info', (req, res) => {
     res.status(200).send('details of the given guest');
 });
 
 
 
-router.post('sendSMS', (req, res) => {
-    // protect this route through static encypted key (bcryptjs)
-    res.status(200).send('send message');
+router.get('/saloons', saloonController.saloon_list);
+
+router.post('sendSMS', async (req, res) => {
+    
+    // validate req.body
+
+    let result = await serviceSMS.sendSMS(req.body.mobile, req.body.message);
+    if(result === -1) {
+        res.status(500).send('message not sent');
+    }
+    res.status(200).send('message sent');
 });
 
 
