@@ -8,7 +8,8 @@ const router = express.Router();
 const foodController = require('./Controllers/foodController');
 const userController = require('./Controllers/userController');
 const saloonController = require('./Controllers/saloonController');
-
+const orderController = require('./Controllers/ordersController');
+const guestController = require('./Controllers/guestController');
 
 
 
@@ -34,35 +35,20 @@ router.get('/foods', foodController.food_list);
 router.get('/foods/:id', foodController.food_detail);
 
 
-router.get('/orders', (req, res) => {
-    res.status(200).send('list of orders');
-});
-
-router.get('/orders/:id', (req, res) => {
-    res.status(200).send('details of the given order id');
-});
-
-
-router.post('/orders', (req, res) => {
-    res.status(200).send('going to make reservation');
-});
-
-router.get('/myOrders/:captainID', (req, res) => {
-    res.status(200).send('list orders taken by the given captainID');
-});
+router.get('/orders', orderController.order_list);
+router.get('/orders/:id', orderController.order_detail);
+router.post('/orders', orderController.make_reserve);
+// router.get('/myOrders/:captainID', orderController.orders_me); equivalent to the next resource
+router.get('/orders/me', orderController.orders_me);
+router.get('/orders/mobile/:mobileNumber', orderController.orders_by_guestMobile);
 
 
-// router.get('/guests', (req, res) => {
-//     res.status(200).send('list of guests info');
-// });
 
-router.get('/guests/:id', (req, res) => {
-    res.status(200).send('list of guests info');
-});
+// router.get('/guests', guestController.guest_list);
+router.get('/guests/:id', guestController.guest_detail_by_ID);
+router.get('/guests/mobile/:mobileNumber/info', guestController.guest_detail_by_mobile);
+router.post('/guests', guestController.guest_create);
 
-router.get('/guests/:mobile/info', (req, res) => {
-    res.status(200).send('details of the given guest');
-});
 
 
 
