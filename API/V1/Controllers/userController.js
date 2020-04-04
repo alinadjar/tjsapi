@@ -61,12 +61,13 @@ module.exports.user_signin = (req, res) => {
 }
 
 module.exports.user_me = (req, res) => {
-    res.sendStatus(200);
+    // the AuthMiddleware will decode the jwt token and extract user into req.user
+    res.status(200).send(req.user);
 }
 
 
 module.exports.user_renewToken = (req, res) => {
-    const username = req.body.username;
+    const username =  req.body.username;
     const refreshToken = req.body.refreshToken;
 
     if ((refreshToken in refreshTokens) && (refreshTokens[refreshToken] === username)) {

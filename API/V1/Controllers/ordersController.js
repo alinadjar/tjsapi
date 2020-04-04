@@ -2,12 +2,13 @@
 const oracleDB = require('oracledb');
 const dbConfig = require('../../../startup/dbConfig')();
 const OrderModel = require('../../../Models/Order_model');
+const OrderDetailModel = require('../../../Models/OrderDetail_model');
 const moment = require('jalali-moment');
 const mom = moment().locale('fa');
 
 
 module.exports.order_list = (req, res) => {
-    console.log(mom.format('YYYY/MM/DD'));    
+    console.log(mom.format('YYYY/MM/DD'));
 
     oracleDB.getConnection(dbConfig)
         .then(connection => {
@@ -33,8 +34,115 @@ module.exports.order_list = (req, res) => {
 }
 
 
-module.exports.order_detail = (req, res) => {
-    res.status(200).send('details of the given order id');
+module.exports.order_detail = async (req, res, next) => {
+    console.log(req.params.visualFactorID);
+
+    if(req.params.visualFactorID === 'me') {
+        return this.orders_me(req, res, next);
+        // this.orders_me(req, res, next);
+        // return; 
+    }
+
+    let connection;
+    try {
+
+        // let query1 = "SELECT * \
+        //              FROM  V_ANDROID_MONITORING_FACTOR \
+        //              WHERE DATE_PAGE = "+`' ${mom.format('YYYY/MM/DD')}'`+" and SHO_PAGE = "+req.params.visualFactorID+" and CENTER = 24";
+        let query1 = "SELECT ID_H \
+                     FROM  V_ANDROID_MONITORING_FACTOR \
+                     WHERE DATE_PAGE = "+ `'1398/03/24'` + " and SHO_PAGE = " + req.params.visualFactorID + " and CENTER = 24";
+        console.log(query1);
+        let query2 = 'select * from V_RESTURANT_PRINT where hsao01 = :id';
+
+
+        connection = await oracleDB.getConnection(dbConfig);
+
+        const result = await connection.execute(query1);
+        if (result.rows.length === 0) {
+            // user not exists
+            res.status(400).send('No such order exists');
+        }
+
+        console.log(result.rows[0]);
+        const Factor_ID = result.rows[0][0];
+
+        const resultDetail = await connection.execute(query2, { id: Factor_ID });
+        let output = [];
+        resultDetail.rows.map(rec => {
+            // console.log(rec);
+            let obj = new OrderDetailModel(rec);
+            output.push(obj);
+        });
+
+        res.status(200).send(JSON.stringify(output));
+
+    } catch (err) {
+        console.log(err);
+        next(err);
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (err) {
+                console.error(err);
+                res.status(500).send(err);
+            }
+        }
+    }
+
+
+}
+
+
+module.exports.order_print = async (req, res, next) => {
+    console.log(req.params.id);
+    const Factor_ID =  req.params.id;
+
+    let connection;
+    try {
+
+
+        let queryHeader = "SELECT * FROM  V_ANDROID_MONITORING_FACTOR WHERE DATE_PAGE = '1398/03/24' and CENTER = 24 and ID_H = :id "// + ` '${mom.format('YYYY/MM/DD')}' `
+        let queryDetail = 'select * from V_RESTURANT_PRINT where hsao01 = :id';
+
+
+        connection = await oracleDB.getConnection(dbConfig);
+
+        const result = await connection.execute(queryHeader, { id: Factor_ID });
+        if (result.rows.length === 0) {
+            // user not exists
+            res.status(400).send('No such order exists');
+        }
+
+
+        const output = {
+            Header : new OrderModel(result.rows[0]),
+            Detail: []
+        }        
+        
+
+        const resultDetail = await connection.execute(queryDetail, { id: Factor_ID });
+        resultDetail.rows.map(rec => {
+            let obj = new OrderDetailModel(rec);
+            output.Detail.push(obj);
+        });
+
+        res.status(200).send(JSON.stringify(output));
+
+    } catch (err) {
+        console.log(err);
+        next(err);
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (err) {
+                console.error(err);
+                res.status(500).send(err);
+            }
+        }
+    }
 }
 
 
@@ -44,6 +152,7 @@ module.exports.make_reserve = (req, res) => {
 
 
 module.exports.orders_me = (req, res) => {
+    console.log(req.user);
     res.status(200).send('list orders taken by the given captainID');
 }
 

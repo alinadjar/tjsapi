@@ -1,5 +1,6 @@
 
 const serviceSMS = require('../../services/serviceSMS');
+const authMiddleware = require('../../middlewares/authMiddleware');
 const express = require('express');
 const router = express.Router();
 
@@ -28,18 +29,19 @@ router.get('/test/:id', (req, res) => {
 router.post('/signin', userController.user_signin);
 router.get('/users/me', userController.user_me);
 router.get('/users/token', userController.user_renewToken);
-router.post('/token/reject', userController.user_rejectToken)
+router.post('/token/reject', userController.user_rejectToken);
 
 
-router.get('/foods', foodController.food_list);
+router.get('/foods', authMiddleware, foodController.food_list);
 router.get('/foods/:id', foodController.food_detail);
 
 
 router.get('/orders', orderController.order_list);
-router.get('/orders/:id', orderController.order_detail);
+router.get('/orders/:visualFactorID', authMiddleware, orderController.order_detail);
+router.get('/orders/:id/print', orderController.order_print);
 router.post('/orders', orderController.make_reserve);
 // router.get('/myOrders/:captainID', orderController.orders_me); equivalent to the next resource
-router.get('/orders/me', orderController.orders_me);
+router.get('/orders/me', authMiddleware, orderController.orders_me);
 router.get('/orders/mobile/:mobileNumber', orderController.orders_by_guestMobile);
 
 
