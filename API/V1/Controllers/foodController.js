@@ -32,7 +32,8 @@ module.exports.food_list = (req, res, next) => {
                 });
         })
         .catch((err) => { 
-            // console.log(err); res.status(500).send('Error Connecting to DB');
+            console.log('=======> '+err); 
+            //res.status(500).send('Error Connecting to DB');
             next(err);
          });
 }

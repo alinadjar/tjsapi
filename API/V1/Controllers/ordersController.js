@@ -12,7 +12,7 @@ module.exports.order_list = (req, res) => {
 
     oracleDB.getConnection(dbConfig)
         .then(connection => {
-            connection.execute("SELECT * FROM  V_ANDROID_MONITORING_FACTOR WHERE DATE_PAGE = '1398/03/24' ")// + ` '${mom.format('YYYY/MM/DD')}' `)
+            connection.execute("SELECT * FROM  V_ANDROID_MONITORING_FACTOR WHERE DATE_PAGE = '1398/03/24' and CENTER = 24")// + ` '${mom.format('YYYY/MM/DD')}' `)
                 .then(result => {
                     if (result.rows.length === 0) {
                         // user not exists
@@ -37,7 +37,7 @@ module.exports.order_list = (req, res) => {
 module.exports.order_detail = async (req, res, next) => {
     console.log(req.params.visualFactorID);
 
-    if(req.params.visualFactorID === 'me') {
+    if (req.params.visualFactorID === 'me') {
         return this.orders_me(req, res, next);
         // this.orders_me(req, res, next);
         // return; 
@@ -97,7 +97,7 @@ module.exports.order_detail = async (req, res, next) => {
 
 module.exports.order_print = async (req, res, next) => {
     console.log(req.params.id);
-    const Factor_ID =  req.params.id;
+    const Factor_ID = req.params.id;
 
     let connection;
     try {
@@ -117,10 +117,10 @@ module.exports.order_print = async (req, res, next) => {
 
 
         const output = {
-            Header : new OrderModel(result.rows[0]),
+            Header: new OrderModel(result.rows[0]),
             Detail: []
-        }        
-        
+        }
+
 
         const resultDetail = await connection.execute(queryDetail, { id: Factor_ID });
         resultDetail.rows.map(rec => {
@@ -153,7 +153,33 @@ module.exports.make_reserve = (req, res) => {
 
 module.exports.orders_me = (req, res) => {
     console.log(req.user);
-    res.status(200).send('list orders taken by the given captainID');
+
+    const { username } = req.user;
+
+
+    oracleDB.getConnection(dbConfig)
+        .then(connection => {
+            connection.execute("SELECT * FROM  V_ANDROID_MONITORING_FACTOR WHERE DATE_PAGE = '1398/03/24' \
+             and CENTER = 24 and MODIFY_USERID = " + `'${username}'`)// + ` '${mom.format('YYYY/MM/DD')}' `)
+                .then(result => {
+                    if (result.rows.length === 0) {
+                        // user not exists
+                        res.status(200).send('No orders for today, yet!');
+                    }
+
+                    let output = [];
+                    result.rows.map(rec => {
+                        let obj = new OrderModel(rec);
+                        output.push(obj);
+                    });
+                    res.send(JSON.stringify(output));
+                })
+                .catch((err) => {
+                    next(err);
+                });
+        })
+        .catch((err) => { console.log(err); res.status(500).send('Error Connecting to DB'); });
+    // res.status(200).send('list orders taken by the given captainID');
 }
 
 

@@ -12,7 +12,17 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 // console.log(app.get('port'));
 
 
+process.on('uncaughtException', ex => {
+    console.log(ex);
+    console.log('UNCAUGHT EXCEPTION OCCURED....');
+    process.exit(1);
+});
 
+process.on('unhandledRejection', ex => {
+    console.log(ex);
+    console.log('UNHANDLED REJECTION OCCURED....');
+    process.exit(1);
+});
 
 // ----------------------------  Middlewares
 
@@ -34,6 +44,7 @@ app.use('/api', require('./API'));
 
 // ---------------------------- Route Handlers
 app.get('/', (req, res) => {
+    // throw new Error('woops');
     res.status(200).send('OK');
 });
 
@@ -46,3 +57,5 @@ const server = app.listen(PORT, () => {
 
     console.log('API running at http://%s:%s', host, port);
 });
+
+

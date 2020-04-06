@@ -26,7 +26,7 @@ module.exports.user_signin = (req, res) => {
                 .then(result => {
                     if (result.rows.length === 0) {
                         // user not exists
-                        res.status(400).send('Invalid User/Pass');
+                        res.status(404).send('Invalid User/Pass');
                     }
 
                     let user = null;
@@ -43,7 +43,7 @@ module.exports.user_signin = (req, res) => {
                             'enable': user.enable
                             // 'role': 'admin'
                         }                        
-                        var token = jwt.sign(tokenBody, config.get('jwtSECRET'), { expiresIn: 300 }); // expire in 5 minutes
+                        var token = jwt.sign(tokenBody, jwtSECRET, { expiresIn: 300 }); // expire in 5 minutes
                         //   exp: Math.floor(Date.now() / 1000) + (60 * 60)
                         // is equivalent to { expiresIn: '1h' }
                         var refreshToken = randtoken.uid(256);
@@ -53,11 +53,15 @@ module.exports.user_signin = (req, res) => {
                     }
                 })
                 .catch((err) => {
-                    console.log('Error, inside catch now!!!');
+                    // console.log('Error, inside catch now!!!');
                     next(err);
                 });
         })
-        .catch((err) => { console.log(err); res.status(500).send('Error Connecting to DB'); });
+        .catch((err) => { 
+            console.log(err); 
+            res.status(500).send('Error Connecting to DB'); 
+            
+        });
 }
 
 module.exports.user_me = (req, res) => {

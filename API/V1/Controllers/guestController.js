@@ -1,14 +1,14 @@
-
+const { MyErrorHandler } = require('../../../Utils/error');
 const GuestInfoModel = require('../../../Models/Guest_Info_model');
 const oracleDB = require('oracledb');
 const dbConfig = require('../../../startup/dbConfig')();
 
-module.exports.guest_list = (req, res) => {
+module.exports.guest_list = (req, res, next) => {
     res.status(200).send('list of guests info');
 }
 
 
-module.exports.guest_detail_by_ID = (req, res) => {
+module.exports.guest_detail_by_ID = (req, res, next) => {
     console.log(req.params.id);
     oracleDB.getConnection(dbConfig)
         .then(connection => {
@@ -16,7 +16,8 @@ module.exports.guest_detail_by_ID = (req, res) => {
                 .then(result => {
                     if (result.rows.length === 0) {
                         // user not exists
-                        res.status(400).send('No such guest exists');
+                        // res.status(404).send('No such guest exists');
+                        throw new MyErrorHandler(404, 'No such guest exists')
                     }
 
                     console.log(result.rows[0]);
@@ -30,12 +31,16 @@ module.exports.guest_detail_by_ID = (req, res) => {
                     next(err);
                 });
         })
-        .catch((err) => { console.log(err); res.status(500).send('Error Connecting to DB'); });
+        .catch((err) => { 
+            console.log(err); 
+            //res.status(500).send('Error Connecting to DB'); 
+            next(new MyErrorHandler(500, 'Error Connecting to DB'));
+        });
 }
 
 
 
-module.exports.guest_detail_by_mobile = (req, res) => {
+module.exports.guest_detail_by_mobile = (req, res, next) => {
 
     console.log(req.params.mobileNumber);
     oracleDB.getConnection(dbConfig)
@@ -44,7 +49,8 @@ module.exports.guest_detail_by_mobile = (req, res) => {
                 .then(result => {
                     if (result.rows.length === 0) {
                         // user not exists
-                        res.status(400).send('No such guest exists');
+                        // res.status(400).send('No such guest exists');
+                        throw new MyErrorHandler(404, 'No such guest exists')
                     }
 
                     console.log(result.rows[0]);
@@ -58,7 +64,11 @@ module.exports.guest_detail_by_mobile = (req, res) => {
                     next(err);
                 });
         })
-        .catch((err) => { console.log(err); res.status(500).send('Error Connecting to DB'); });
+        .catch((err) => { 
+            console.log(err); 
+            // res.status(500).send('Error Connecting to DB'); 
+            next(new MyErrorHandler(500, 'Error Connecting to DB'));
+        });
 
 }
 
@@ -93,7 +103,8 @@ module.exports.guest_create = async (req, res, next) => {
         console.log('============================');
         console.log(resultSP.outBinds);
         if (_.toString(resultSP.value) === '-1') {
-            res.status(500).send('Transaction Failed: , Please try again');
+            // res.status(500).send('Transaction Failed: , Please try again');
+            throw new MyErrorHandler(500, 'Transaction Failed: , Please try again')
         }
 
 
