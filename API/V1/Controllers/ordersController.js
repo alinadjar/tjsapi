@@ -3,11 +3,13 @@ const oracleDB = require('oracledb');
 const dbConfig = require('../../../startup/dbConfig')();
 const OrderModel = require('../../../Models/Order_model');
 const OrderDetailModel = require('../../../Models/OrderDetail_model');
+const GuestInfoModel = require('../../../Models/Guest_Info_model');
+const { MyErrorHandler } = require('../../../Utils/error');
 const moment = require('jalali-moment');
 const mom = moment().locale('fa');
 
 
-module.exports.order_list = (req, res) => {
+module.exports.order_list = (req, res, next) => {
     console.log(mom.format('YYYY/MM/DD'));
 
     oracleDB.getConnection(dbConfig)
@@ -60,8 +62,8 @@ module.exports.order_detail = async (req, res, next) => {
 
         const result = await connection.execute(query1);
         if (result.rows.length === 0) {
-            // user not exists
-            res.status(400).send('No such order exists');
+            // order not exists
+            res.status(404).send('No such order exists');
         }
 
         console.log(result.rows[0]);
@@ -90,8 +92,6 @@ module.exports.order_detail = async (req, res, next) => {
             }
         }
     }
-
-
 }
 
 
@@ -102,7 +102,6 @@ module.exports.order_print = async (req, res, next) => {
     let connection;
     try {
 
-
         let queryHeader = "SELECT * FROM  V_ANDROID_MONITORING_FACTOR WHERE DATE_PAGE = '1398/03/24' and CENTER = 24 and ID_H = :id "// + ` '${mom.format('YYYY/MM/DD')}' `
         let queryDetail = 'select * from V_RESTURANT_PRINT where hsao01 = :id';
 
@@ -111,8 +110,8 @@ module.exports.order_print = async (req, res, next) => {
 
         const result = await connection.execute(queryHeader, { id: Factor_ID });
         if (result.rows.length === 0) {
-            // user not exists
-            res.status(400).send('No such order exists');
+            // order not exists
+            res.status(404).send('No such order exists');
         }
 
 
@@ -146,12 +145,12 @@ module.exports.order_print = async (req, res, next) => {
 }
 
 
-module.exports.make_reserve = (req, res) => {
+module.exports.make_reserve = (req, res, next) => {
     res.status(200).send('going to make reservation');
 }
 
 
-module.exports.orders_me = (req, res) => {
+module.exports.orders_me = (req, res, next) => {
     console.log(req.user);
 
     const { username } = req.user;
@@ -172,7 +171,7 @@ module.exports.orders_me = (req, res) => {
                         let obj = new OrderModel(rec);
                         output.push(obj);
                     });
-                    res.send(JSON.stringify(output));
+                    res.send(output);
                 })
                 .catch((err) => {
                     next(err);
@@ -183,9 +182,51 @@ module.exports.orders_me = (req, res) => {
 }
 
 
-module.exports.orders_by_guestMobile = (req, res) => {
+module.exports.orders_by_guestMobile = async (req, res, next) => {
+
+    let connection;
+    try {
+        connection = await oracleDB.getConnection(dbConfig);
+
+        const r = await connection.execute(
+            "select * from V_LIST_RESTURANT_CUSTOMER where INCU12 = " + ` '${req.params.mobileNumber}' `);
+
+        if (r.rows.length === 0) {
+            throw new MyErrorHandler(404, 'No such guest exists')
+        }
+
+        guest = new GuestInfoModel(r.rows[0]);
+        console.log(guest);
+
+        // guest.Id  is  Tafsili        
+        const query = "SELECT * FROM  V_ANDROID_MONITORING_FACTOR \
+                       WHERE DATE_PAGE = '1398/03/24' and CENTER = 24 and TAF=:customerTAF";// ` '${mom.format('YYYY/MM/DD')}' `
+        const customerOrdersList = await connection.execute(query, { customerTAF: guest.Id });
+
+
+        let output = [];
+        customerOrdersList.rows.map(rec => {
+            let obj = new OrderModel(rec);
+            output.push(obj);
+        });
+
+        res.status(200).send(output);
+
+    } catch (err) {
+        console.log(err);
+        next(err);
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (err) {
+                console.error(err);
+                res.status(500).send(err);
+            }
+        }
+    }
 
     // use guestController --> fetch user info using mobile
-    // now use huest tafsili and call order_list using that tafsili
-    res.status(200).send('list orders made through the given guest mobile');
+    // now use guest tafsili and call order_list using that tafsili
+    // res.status(200).send('list orders made through the given guest mobile');
 }
